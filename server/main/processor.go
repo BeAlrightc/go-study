@@ -16,6 +16,10 @@ type Processor struct {
 //编写一个ServerProcessMes函数
 //功能 ：根据客户端发送的消息种类不同，决定调用哪个函数处理
 func (this *Processor) serverProcessMes(mes *message.Message)(err error) {
+	
+	//看看是否能接受到客户端发送的群发消息
+	fmt.Println("mes=",mes)
+	
 	switch mes.Type {
 	case message.LoginMesType :
 		//处理登录的逻辑

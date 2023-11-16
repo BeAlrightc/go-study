@@ -9,4 +9,5 @@ type User struct {
 	UserPwd  string `json:"userPwd"`
 	UserName string `json:"userName"`
 	UserStatus string  `json:"userStatus"` //用户状态
+	Sex string `json:"sex"` //性别
 }
