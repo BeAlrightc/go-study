@@ -16,6 +16,60 @@ type UserProcess struct {
 	UserId int
 }
 
+//这里我们编写通知所有在线用户的方法
+//这个id要通知其他的在线用户，我上线
+func (this *UserProcess) NotifyOthersOnlineUser(userId int) {
+
+	//遍历 onlineUsers ,然后一个一个的发送 NotifyUserStatusMes
+	for id, up := range userMgr.onlineUsers {
+		//过滤掉自己
+		if id == userId {
+			continue
+		}
+		//开始通知【单独的写一个方法】
+		up.NotifyMeOnline(userId)
+	}
+
+}
+
+func (this *UserProcess) NotifyMeOnline(userId int){
+
+	//组装我们的NotifyUserStatusMes
+	var mes message.Message
+	mes.Type = message.NotifyUserStatusMesType
+
+	var notifyUserStatusMes message.NotifyUserStatusMes
+	notifyUserStatusMes.UserId = userId
+	notifyUserStatusMes.Status = message.UserOnline
+
+	//将notifyUserStatusMes序列化
+	data, err := json.Marshal(notifyUserStatusMes)
+	if err != nil {
+		fmt.Println("json.Marshal err",err)
+		return
+	}
+	//将序列化后的notifyUserStatusMes赋值给mes.Data
+	mes.Data = string(data)
+
+	//对message再次序列化
+	data, err = json.Marshal(mes)
+	if err != nil {
+		fmt.Println("json.Marshal err",err)
+		return
+	}
+	//发送,创建一个transfer实例发送
+	tf := &utils.Transfer{
+		Conn : this.Conn,
+	}
+	err = tf.WritePkg(data)
+	if err != nil {
+		fmt.Println("NotifyMeOline err=",err)
+		return
+	}
+
+}
+
+
 func (this *UserProcess) ServerProcessRegister(mes *message.Message) (err error){
 	//1.先从mes中取出mes.Data,并直接反序列化成RegisterMes
 	var registerMes message.RegisterMes
@@ -114,6 +168,8 @@ func (this *UserProcess) ServerProcessLogin(mes *message.Message) (err error) {
 		//将登录成功的用户的userId赋给this
 		this.UserId = loginMes.UserId
 		userMgr.AddOnlinesUser(this)
+		//通知其他的用户我上线了
+		this.NotifyOthersOnlineUser(loginMes.UserId)
 		//将当前在线用户的id放入到loginResMes.UsersId
 		//遍历userMgr.onlineUsers
 		for id, _ := range userMgr.onlineUsers{
